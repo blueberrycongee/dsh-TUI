@@ -458,6 +458,12 @@ const GROUPS = {
 // installModelSelection、#34 的投递异步化都没被它们拦下），挂进来
 // 防再腐烂。
     ["verify-submit", ['node', '--import', 'tsx/esm', 'scripts/verify-submit.mjs']],
+    ['verify-shell-compat', ['node', 'scripts/verify-shell-compat.mjs']],
+    ['verify-agent-lifecycle-compat', ['node', 'scripts/verify-agent-lifecycle-compat.mjs']],
+    ['verify-bundled-presets', ['node', 'scripts/verify-bundled-presets.mjs']],
+    ['verify-preset-startup', ['node', 'scripts/verify-preset-startup.mjs']],
+    ['verify-message-compat', ['node', 'scripts/verify-message-compat.mjs']],
+    ['verify-settings-compat', ['node', '--import', 'tsx/esm', 'scripts/verify-settings-compat.mjs']],
     ["verify-compact", ['node', '--import', 'tsx/esm', 'scripts/verify-compact.mjs']],
     ["verify-context-warning", ['node', '--import', 'tsx/esm', 'scripts/verify-context-warning.mjs']],
     ["verify-channel-goal-todo", ['node', '--import', 'tsx/esm', 'scripts/verify-channel-goal-todo.mjs']],

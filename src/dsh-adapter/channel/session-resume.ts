@@ -78,7 +78,7 @@ export function createSessionResumeActions(
   },
   deps: {
     owner: Pick<ChannelOwner, 'current'>
-    binding: Pick<Binding, 'agent' | 'capture' | 'isCurrent' | 'prepare' | 'abandon' | 'adopt'>
+    binding: Pick<Binding, 'agent' | 'capture' | 'isCurrent' | 'prepare' | 'abandon' | 'adopt' | 'waitForDisposal'>
     /**
      * Adopt an agent this process already has live. `/resume` uses it so a
      * target that is already running here is re-attached in place (parking the
@@ -368,6 +368,10 @@ export function createSessionResumeActions(
     // `attachToAgent()` has always short-circuited here; this is the same rule
     // for the unified screen's `/resume` path.
     if (String(sessionId) === String(entrySession.id)) return { ok: true }
+    // Switching away starts disposal without blocking the synchronous commit.
+    // Do not adopt that closing Agent (or reopen its still-held JSONL writer).
+    await deps.binding.waitForDisposal(sessionId)
+    if (!deps.binding.isCurrent(adoption)) return { ok: false, reason: 'cancelled' }
     // A live agent of this process is already mounted here; there is nothing
     // to claim and nothing that can be occupied. Adoption takes the live
     // handle (parking the current one) with no occupancy round-trip.

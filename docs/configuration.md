@@ -27,6 +27,10 @@ Profile 启动按顺序叠加：
 
 ## TUI 配置
 
+DSH 0.1.7 的 `/settings` 写入当前 profile 的 `cordis.patch.yml`，字段属于插件
+Config；旧版仍使用 `~/.dsh/settings.yaml`。不要把旧文件路径当成新版设置入口。
+语言、布局等偏好实时更新；全屏和图片预览需 `/restart`。
+
 下面是完整的常用覆盖示例：
 
 ```yaml
@@ -54,7 +58,10 @@ Profile 启动按顺序叠加：
 | `model` | Harness `agentDefaultModel`；裸组合回落 `deepseek-flash` | 启动模型；`/model` 可通过 session fork 实时切换 |
 | `cwd` | 启动目录所在的 git worktree 根（不在任何 worktree 内时为 `process.cwd()`；家目录的 dotfiles 仓不算） | TUI 会话侧工作区：agent meta、`@` 补全/提及展开、/resume 过滤、状态栏；恢复已有会话时以该会话持久化的 cwd 为准。注意 bash/fs-policy/sandbox 的根仍由组合层 cordis 配置决定（默认启动目录，归 dsh-base 管），与这里的会话侧 cwd 可能不同 |
 | `workspace` | 未设置 | 启动工作区目标；可用本地路径、`file://` URI 或插件提供的 URI，设置后优先于 `cwd` |
-| `effort` | 配置层通常为 `max` | 每个请求实际生效的推理等级（按运行时模型档位校验，非法档位静默回落默认；兼作顶栏启动显示）。优先级：/settings 的默认推理强度 `effortDefault`（settings.yaml 用户层，`auto` 时让位）> 本字段 > `/effort` 持久化选择（`~/.dsh-tui/effort.json`）> 模型默认 |
+| `effort` | 配置层通常为 `max` | 每个请求实际生效的推理等级（按运行时模型档位校验，非法档位静默回落默认；兼作顶栏启动显示）。优先级：/settings 的 `effortDefault`（`auto` 时让位）> 本字段 > `/effort` 持久化选择（`~/.dsh-tui/effort.json`）> 模型默认 |
+| `effortDefault` | 未设置 | 新会话默认推理强度；`auto` 让位给 `effort`，可经 `/settings` 修改 |
+| `whale` / `whaleIdle` | `true` / `true` | 标题鲸鱼与欢迎页鲸鱼闲置动画 |
+| `minimal` | `false` | 精简标题装饰与配色 |
 | `modes` | 内置三档 | Shift+Tab 会话模式循环（plan/sandbox/approval 原子组合）；缺省为 默认 → 计划 → 完全访问 |
 | `activity` | `true` | 是否显示实时工作状态行 |
 | `activityFrames` | `moon8` | 工作状态动画预设；也可通过 `/activity` 修改。旧配置值 `claude` 读取时映射为 `moon8`，选择器不再显示该旧预设 |
@@ -108,7 +115,8 @@ Profile 启动按顺序叠加：
 
 ## Agent Preset
 
-每个会话通过 `@deepseek-ai/dsh-agent-presets` 组合模型可见的工具和提示词：
+每个会话通过官方 preset registry 组合模型可见的工具和提示词。0.1.7 使用
+`@deepseek-ai/dsh-agent-preset-registry`，旧版使用 `@deepseek-ai/dsh-agent-presets`：
 
 | ID | 名称 | 能力 |
 | --- | --- | --- |
@@ -122,9 +130,9 @@ Profile 启动按顺序叠加：
 
 - `/preset` 打开选择器。
 - `/preset <id>` 直接选择；`/preset status` 查看当前状态。
-- 选择器显示的名称与描述取自各 preset 的 `preset.yml`（中文）。
+- 选择器显示的名称与描述取自 registry 声明（旧版取自 `preset.yml`）。
 - 界面语言为 `en`（`/lang en`）时，内置 preset 显示本地化的英文名称与描述。
-- 内置 preset：`standard` / `minimal` / `code` / `cordis` / `liangshen`；
+- 内置 preset：`standard` / `minimal` / `ptc`（旧版 `code`）/ `cordis` / `liangshen`；
   自定义 preset 原样显示。
 - 空白会话可以原地切换。已产生对话的会话遵循官方 blank-only 规则：选择只
   保存为新默认值，在 `/new` 或下一次启动时生效。
@@ -140,8 +148,8 @@ Profile 启动按顺序叠加：
 
 ### 梁神模式
 
-- 梁神模式随 dsh-tui 包发布，启动时安装到用户 preset 根目录。
-- 已有同名且并非 dsh-tui 托管的目录不会被覆盖。
+- 梁神模式随 dsh-tui 包发布，0.1.7 启动时注册到官方 registry，已有同名 profile 声明优先。
+- 旧版安装到用户 preset 根目录；已有非托管目录不会被覆盖。
 - Windows 首轮 `bash` 通过自动发现的 Git Bash 执行，依次尝试：
   - PATH 上的 `git.exe` 所在安装树（安装器/便携/Scoop 布局通用，穿透 Scoop shim）
   - 常规安装位置与 Scoop 约定目录
@@ -152,8 +160,9 @@ Profile 启动按顺序叠加：
 
 ### 自定义 preset
 
-自定义 preset 放在 `$DSH_HOME/.agent-presets/<name>/`，目录中应包含
-`agent.cordis.yml`。默认 `DSH_HOME` 下的路径即 `~/.dsh/.agent-presets/`。
+0.1.7 通过 profile/bundle 声明 `@deepseek-ai/dsh-agent-preset`，配置包含 `id`、
+`name` 与 `plugins`。旧目录预设需要按上游迁移为 bundle，TUI 不再自行扫描目录。
+旧版仍从 `$DSH_HOME/.agent-presets/<name>/agent.cordis.yml` 发现预设。
 
 从 0.3 起，模型侧工具、plan、compaction、delegation 等由 preset 自己组合。
 Profile 模式不再使用旧的 `DSH_TUI_COMPACT_RATIO`、`DSH_TUI_COMPACT_RETAIN`
@@ -239,7 +248,7 @@ Profile 模式不再使用旧的 `DSH_TUI_COMPACT_RATIO`、`DSH_TUI_COMPACT_RETA
 
 | 产物 | 位置 |
 | --- | --- |
-| provider profile | `~/.dsh/settings.yaml` 的 `llm-pi-ai.providers.<路由名>`，写入即注册路由，删除即注销 |
+| provider profile | 0.1.7 当前 profile 配置中的 `llm-pi-ai.providers.<路由名>`；旧版在 `~/.dsh/settings.yaml`，写入即注册路由，删除即注销 |
 | API key | `~/.dsh/.credentials.yaml`（0600），引用名为 `<路由名大写>_API_KEY` |
 
 捆绑 dsh-auth 挂载时，添加分支多出**订阅账号登录（OAuth）**：ChatGPT / Claude /

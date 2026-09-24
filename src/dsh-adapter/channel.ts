@@ -68,6 +68,7 @@ import { createChannelEmitter } from './channel/emitter.js'
 import { createInputActions, type InputConvergence } from './channel/input-actions.js'
 import { createComposerImages } from './channel/composer-images.js'
 import { snapshotLiveSessionEvents } from './compat/liveSession.js'
+import { runForegroundShell, type ForegroundShell } from './compat/shell.js'
 import { createPermissionModeRoster } from './channel/mode-roster.js'
 import { createPermissionModeActions } from './channel/mode-permission-actions.js'
 import { expandMentions, mentionAttachments, mentionFs } from './channel/mentions.js'
@@ -678,10 +679,7 @@ function createChannelWithOwner(
       })
     }
   }
-  const bash = ctx.get('shell') as {
-    resolve(request: { command: string; workdir?: string; timeoutMs: number }): { command: string; timeoutMs: number }
-    run(spec: { command: string; timeoutMs: number }): Promise<{ stdout: { text: string }; stderr: { text: string }; timedOut: boolean }>
-  } | undefined
+  const bash = ctx.get('shell') as ForegroundShell | undefined
 
   const projector = createChannelProjection(state, {
     agent: () => binding.agent, rowIds, resetContextWarning, pendingTaskDescriptions, jobs: jobStore, inputConvergence,
@@ -1063,14 +1061,11 @@ function createChannelWithOwner(
     // flight refreshes the branch for the NEW cwd, so a late reply from the
     // old workspace must be dropped (statusline staleness, issue #96 review).
     const requestedCwd = state.cwd
-    void bash
-      .run(
-        bash.resolve({
-          command: 'git branch --show-current',
-          workdir: requestedCwd,
-          timeoutMs: 3000,
-        }),
-      )
+    void runForegroundShell(bash, {
+      command: 'git branch --show-current',
+      workdir: requestedCwd,
+      timeoutMs: 3000,
+    })
       .then((result) => {
         if (!owner.current() || state.cwd !== requestedCwd) return
         const branch = result.stdout.text.trim()

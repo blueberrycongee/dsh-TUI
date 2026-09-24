@@ -204,7 +204,7 @@ Click a staged `[Image #N]` token or a transcript thumbnail to open one shared, 
 
 `/lang` toggles the UI between Simplified Chinese and English (affects all UI strings); the choice persists across restarts (0.3.7+).
 
-- The **dsh-tui → Language** select in `/settings` switches it too: applies immediately and saves to `dsh-tui.lang` in `~/.dsh/settings.yaml`.
+- The **dsh-tui → Language** select in `/settings` switches it too: applies immediately and saves `dsh-tui.lang` in the active profile config (`~/.dsh/settings.yaml` on older hosts).
 - The `DSH_TUI_LANG` env var always wins.
 
 ## Message delivery semantics
@@ -373,8 +373,8 @@ A full-screen scene (no scrollback pollution) over the whole session timeline:
 `/settings` opens the plugin settings editor, read/edit by namespace.
 
 - Edits **auto-save**: `↑`/`↓` to move, `Enter` to expand/toggle/edit, booleans/selects write on the spot, text drafts confirm on Enter, `Esc` just exits.
-- Fields under the dsh-tui namespace are written to the user layer of settings.yaml and take **effect immediately** (`lang`, `statusBar.*`, …).
-- Namespaces without a declared TUI section are listed read-only and need manual edits to `~/.dsh/settings.yaml`.
+- Fields under the dsh-tui namespace are written to the active profile config (legacy: settings.yaml user layer) and take **effect immediately** (`lang`, `statusBar.*`, …).
+- Namespaces without a declared TUI section are listed read-only and need manual edits to the profile config (`~/.dsh/settings.yaml` on older hosts).
 
 ### Model and preset
 

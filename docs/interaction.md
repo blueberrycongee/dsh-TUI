@@ -228,7 +228,7 @@ Bracketed paste（右键或终端原生粘贴）保留普通文本与换行。
 
 - 选择持久化，重启后沿用（0.3.7+）。
 - `/settings` 的 **dsh-tui → 界面语言** 下拉项同样可以切换。
-- 立即生效并保存到 `~/.dsh/settings.yaml` 的 `dsh-tui.lang`。
+- 立即生效并保存到当前 profile 配置的 `dsh-tui.lang`（旧版为 `~/.dsh/settings.yaml`）。
 - `DSH_TUI_LANG` 环境变量始终优先。
 
 ## 消息投递语义
@@ -418,9 +418,9 @@ Windows `dsh-tui.cmd --resume` 使用 `~/.dsh-tui/resume.txt` 中最后选择的
 
 命名空间写入：
 
-- dsh-tui 自身命名空间的字段写入 settings.yaml 用户层并**实时生效**（`lang`、`statusBar.*` 等）。
+- dsh-tui 自身命名空间的字段写入当前 profile 配置（旧版为 settings.yaml 用户层）并**实时生效**（`lang`、`statusBar.*` 等）。
 - 未声明 TUI 区块的命名空间以只读形式列出。
-- 需手工编辑 `~/.dsh/settings.yaml`。
+- 需手工编辑 profile 配置（旧版为 `~/.dsh/settings.yaml`）。
 
 ### Model 与 preset
 

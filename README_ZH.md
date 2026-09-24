@@ -86,6 +86,9 @@
 
 前置条件：安装 [Node.js](https://nodejs.org/zh-cn) 与 [deepseek-harness](https://github.com/deepseek-ai/deepseek-harness)，并配置 `DEEPSEEK_API_KEY`。
 
+主适配目标为 DSH `0.1.7-rc.1`，已接入新版 Shell API、V4 会话消息、声明式预设与
+profile 设置；旧受支持版本保留兼容路径。迁移说明见[配置参考](docs/configuration.md)。
+
 ```sh
 # 安装（全局，自带 dsh-tui 命令）
 npm install -g @deepseek-ai/dsh @deepseek-harness-tui/dsh-tui

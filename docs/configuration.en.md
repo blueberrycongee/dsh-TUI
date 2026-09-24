@@ -28,6 +28,11 @@ only for a genuinely new service.
 
 ## TUI configuration
 
+On DSH 0.1.7, `/settings` writes plugin Config fields to the active profile's
+`cordis.patch.yml`. Older hosts still use `~/.dsh/settings.yaml`; that file is
+not the new settings entry point. Language and layout preferences update live;
+fullscreen and image previews require `/restart`.
+
 A complete common override looks like this:
 
 ```yaml
@@ -56,7 +61,10 @@ A complete common override looks like this:
 | `model` | Harness `agentDefaultModel`; bare compositions fall back to `deepseek-flash` | Startup model; `/model` can switch through a session fork |
 | `cwd` | git worktree root containing the launch directory (`process.cwd()` when outside any worktree; a dotfiles repo at `$HOME` does not count) | TUI-side session workspace: agent meta, `@` completion/mention expansion, /resume filtering, statusline; resuming an existing session adopts that session's persisted cwd. Note the bash/fs-policy/sandbox roots are still owned by the composition layer's cordis config (default: the launch directory, governed by dsh-base) and may differ from this session-side cwd |
 | `workspace` | unset | Startup workspace target: a local path, `file://` URL, or plugin-provided URI; takes precedence over `cwd` |
-| `effort` | normally `max` in the bundle | Reasoning effort applied to every request (validated against the runtime model's levels; invalid levels silently fall back to the adapter default), also shown in the header at startup. Precedence: /settings default reasoning effort `effortDefault` (settings.yaml user layer; `auto` defers) > this field > the persisted `/effort` choice (`~/.dsh-tui/effort.json`) > the model default |
+| `effort` | normally `max` in the bundle | Reasoning effort applied to every request (validated against the runtime model's levels; invalid levels silently fall back to the adapter default), also shown in the header at startup. Precedence: /settings `effortDefault` (`auto` defers) > this field > the persisted `/effort` choice (`~/.dsh-tui/effort.json`) > the model default |
+| `effortDefault` | unset | Default reasoning effort for new sessions; `auto` defers to `effort`; editable through `/settings` |
+| `whale` / `whaleIdle` | `true` / `true` | Header whale and welcome-page idle animation |
+| `minimal` | `false` | Reduce header decoration and colors |
 | `modes` | built-in trio | Shift+Tab session-mode cycle (plan/sandbox/approval atom bundles); defaults to default → plan → full-access |
 | `activity` | `true` | Show the live activity row |
 | `activityFrames` | `moon8` | Activity animation preset; `/activity` changes it at runtime. A legacy saved value of `claude` is read as `moon8`, and the picker no longer offers that legacy preset |
@@ -120,8 +128,9 @@ Do not insert a second row and do not separately run
 
 ## Agent presets
 
-Each session composes its model-visible tools and prompt through
-`@deepseek-ai/dsh-agent-presets`:
+Each session composes its model-visible tools and prompt through the official
+preset registry: `@deepseek-ai/dsh-agent-preset-registry` on 0.1.7, or
+`@deepseek-ai/dsh-agent-presets` on older hosts:
 
 | ID | Name | Capability |
 | --- | --- | --- |
@@ -135,11 +144,11 @@ Each session composes its model-visible tools and prompt through
 
 - `/preset` opens the picker.
 - `/preset <id>` selects directly; `/preset status` reports the current state.
-- Picker names and descriptions come verbatim from each preset's `preset.yml`
-  (written in Chinese).
+- Picker names and descriptions come from registry declarations (from
+  `preset.yml` on older hosts).
 - Under the `en` UI language (`/lang en`), the built-in presets show localized
   English names and descriptions.
-- Built-in presets: `standard` / `minimal` / `code` / `cordis` / `liangshen`;
+- Built-in presets: `standard` / `minimal` / `ptc` (legacy `code`) / `cordis` / `liangshen`;
   custom presets are shown as-is.
 - A blank session can switch in place. Once a conversation has started, the
   official blank-only rule stores the choice as the new default for `/new` or
@@ -158,8 +167,9 @@ Each session composes its model-visible tools and prompt through
 
 ### Liangshen mode
 
-- Liangshen mode ships with dsh-tui and is installed into the user preset root
-  at startup. An existing unmanaged directory with the same id is preserved.
+- Liangshen mode ships with dsh-tui. On 0.1.7 it registers with the official
+  registry; an existing profile declaration with the same id takes precedence.
+  Older hosts install it into the user preset root, preserving unmanaged directories.
 - The first-round `bash` on Windows runs an auto-discovered Git Bash, trying
   in order:
   - The installation tree of a `git.exe` found on PATH (covers installer,
@@ -173,9 +183,10 @@ Each session composes its model-visible tools and prompt through
 
 ### Custom presets
 
-Place a custom preset at `$DSH_HOME/.agent-presets/<name>/` with an
-`agent.cordis.yml` file. Under the default DSH home this is
-`~/.dsh/.agent-presets/`.
+On 0.1.7, declare `@deepseek-ai/dsh-agent-preset` through a profile/bundle with
+`id`, `name`, and `plugins` in its config. Migrate old directory presets to
+bundles using the upstream workflow; TUI no longer scans directories itself.
+Older hosts still discover `$DSH_HOME/.agent-presets/<name>/agent.cordis.yml`.
 
 Since 0.3, model-side tools, planning, compaction, and delegation are owned by
 the preset. Profile mode no longer uses the old `DSH_TUI_COMPACT_RATIO`,
@@ -269,7 +280,7 @@ Where it writes:
 
 | Artifact | Location |
 | --- | --- |
-| Provider profile | `llm-pi-ai.providers.<route>` in `~/.dsh/settings.yaml`; the route registers on write and unregisters on delete |
+| Provider profile | `llm-pi-ai.providers.<route>` in the active profile config on 0.1.7, or `~/.dsh/settings.yaml` on older hosts; the route registers on write and unregisters on delete |
 | API key | `~/.dsh/.credentials.yaml` (mode 0600), referenced as `<ROUTE>_API_KEY` |
 
 With the bundled dsh-auth plugin mounted, the add branch also offers
